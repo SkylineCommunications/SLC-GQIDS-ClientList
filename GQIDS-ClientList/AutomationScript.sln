@@ -1,0 +1,48 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.33130.400
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Internal", "Internal", "{CB4ED49B-6415-4AC7-A5C7-6A3944E1438C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{07D7F443-718F-4FC8-9EF1-C8B1394FB792}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Code Analysis", "Code Analysis", "{4054D228-1E0C-49DE-9B39-5D575D248DBF}"
+	ProjectSection(SolutionItems) = preProject
+		Internal\Code Analysis\qaction-debug.ruleset = Internal\Code Analysis\qaction-debug.ruleset
+		Internal\Code Analysis\qaction-release.ruleset = Internal\Code Analysis\qaction-release.ruleset
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Connections Source Script", "Connections Source Script", "{4C34FE86-CD66-4D0B-92FC-30551C9454B4}"
+	ProjectSection(SolutionItems) = preProject
+		Connections Source Script.xml = Connections Source Script.xml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Actions", "Actions", "{DF45C3B5-5111-4BF8-B190-AE8A66CB0928}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Connections Source Script_2", "Connections Source Script_2\Connections Source Script_2.csproj", "{557AC1EA-F0A6-463B-B525-C9E2F28C7709}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{557AC1EA-F0A6-463B-B525-C9E2F28C7709}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{557AC1EA-F0A6-463B-B525-C9E2F28C7709}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{557AC1EA-F0A6-463B-B525-C9E2F28C7709}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{557AC1EA-F0A6-463B-B525-C9E2F28C7709}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{4054D228-1E0C-49DE-9B39-5D575D248DBF} = {CB4ED49B-6415-4AC7-A5C7-6A3944E1438C}
+		{4C34FE86-CD66-4D0B-92FC-30551C9454B4} = {07D7F443-718F-4FC8-9EF1-C8B1394FB792}
+		{DF45C3B5-5111-4BF8-B190-AE8A66CB0928} = {4C34FE86-CD66-4D0B-92FC-30551C9454B4}
+		{557AC1EA-F0A6-463B-B525-C9E2F28C7709} = {DF45C3B5-5111-4BF8-B190-AE8A66CB0928}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {259EB8D6-D487-4A05-8B0E-3B0F88BF0A85}
+	EndGlobalSection
+EndGlobal

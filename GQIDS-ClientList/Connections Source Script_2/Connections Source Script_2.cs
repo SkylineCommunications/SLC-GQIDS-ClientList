@@ -5,24 +5,14 @@ using Skyline.DataMiner.Analytics.GenericInterface;
 using Skyline.DataMiner.Net.Messages;
 
 [GQIMetaData(Name = "Connections")]
-public class ConnectionSource : IGQIDataSource, IGQIOnInit
+public class ConnectionSource : IGQIDataSource, IGQIInputArguments, IGQIOnInit
 {
-	private readonly RecordDefinition<LoginInfoResponseMessage> _recordDefinition;
+	private GQIBooleanArgument _resolveSubscriptions = new GQIBooleanArgument("Resolve Subscriptions") { DefaultValue = false };
 
+	private bool resolveSubscriptions;
 	private GQIDMS _dms;
 
-	public ConnectionSource()
-	{
-		_recordDefinition = ForProperties(new IPropertyDefinition<LoginInfoResponseMessage>[]
-		{
-			ForString<LoginInfoResponseMessage>("Name", connection => connection.Name),
-			ForString<LoginInfoResponseMessage>("Full name", connection => connection.FullName),
-			ForString<LoginInfoResponseMessage>("Friendly name", connection => connection.FriendlyName),
-			ForString<LoginInfoResponseMessage>("Connection id", connection => $"{connection.ConnectionID}"),
-			ForDateTime<LoginInfoResponseMessage>("Connect time", connection => connection.ConnectTime.ToUniversalTime()),
-			ForString<LoginInfoResponseMessage>("Attributes", connection => $"{connection.ConnectionAttributes}"),
-		});
-	}
+	private List<GQIColumn> _columns;
 
 	public OnInitOutputArgs OnInit(OnInitInputArgs args)
 	{
@@ -30,15 +20,98 @@ public class ConnectionSource : IGQIDataSource, IGQIOnInit
 		return default;
 	}
 
+	public GQIArgument[] GetInputArguments()
+	{
+		return new GQIArgument[] { _resolveSubscriptions };
+	}
+
+	public OnArgumentsProcessedOutputArgs OnArgumentsProcessed(OnArgumentsProcessedInputArgs args)
+	{
+		_columns = new List<GQIColumn>
+		{
+			new GQIStringColumn("Name"),
+			new GQIStringColumn("Full Name"),
+			new GQIStringColumn("Friendly Name"),
+			new GQIStringColumn("Connection ID"),
+			new GQIDateTimeColumn("Connect Time"),
+			new GQIStringColumn("Attributes"),
+		};
+
+		resolveSubscriptions = args.GetArgumentValue(_resolveSubscriptions);
+
+		if (resolveSubscriptions)
+		{
+			_columns.Add(new GQIDoubleColumn("Number Of subscriptions"));
+		}
+
+		return new OnArgumentsProcessedOutputArgs();
+	}
+
 	public GQIColumn[] GetColumns()
 	{
-		return _recordDefinition.GetColumns();
+		return _columns.ToArray();
 	}
 
 	public GQIPage GetNextPage(GetNextPageInputArgs args)
 	{
-		var connections = GetConnections();
-		var rows = connections.Select(_recordDefinition.CreateRow);
+		var rows = new List<GQIRow>();
+		var Connections = GetConnections();
+
+		foreach (var connection in Connections)
+		{
+			List<GQICell> cells = new List<GQICell>();
+
+			foreach (var column in _columns)
+			{
+				switch (column.Name)
+				{
+					case "Name":
+						{
+							cells.Add(new GQICell() { Value = connection.Name });
+							break;
+						}
+
+					case "Full Name":
+						{
+							cells.Add(new GQICell() { Value = connection.FullName });
+							break;
+						}
+
+					case "Friendly Name":
+						{
+							cells.Add(new GQICell() { Value = connection.FriendlyName });
+							break;
+						}
+
+					case "Connection ID":
+						{
+							cells.Add(new GQICell() { Value = Convert.ToString(connection.ConnectionID) });
+							break;
+						}
+
+					case "Connect Time":
+						{
+							cells.Add(new GQICell() { Value = connection.ConnectTime.ToUniversalTime() });
+							break;
+						}
+
+					case "Attributes":
+						{
+							cells.Add(new GQICell() { Value = connection.ConnectionAttributes.ToString() });
+							break;
+						}
+
+					case "Number Of subscriptions":
+						{
+							cells.Add(new GQICell() { Value = Convert.ToDouble(GetNumberOfSubscriptions(connection.ConnectionID)) });
+							break;
+						}
+				}
+			}
+
+			rows.Add(new GQIRow(cells.ToArray()));
+		}
+
 		return new GQIPage(rows.ToArray()) { HasNextPage = false };
 	}
 
@@ -49,67 +122,10 @@ public class ConnectionSource : IGQIDataSource, IGQIOnInit
 		return responses.OfType<LoginInfoResponseMessage>();
 	}
 
-	private PropertyDefinition<TSource, string> ForString<TSource>(string name, Func<TSource, string> accessor)
+	private int GetNumberOfSubscriptions(Guid connectionID)
 	{
-		var column = new GQIStringColumn(name);
-		return new PropertyDefinition<TSource, string>(column, accessor);
-	}
-
-	private PropertyDefinition<TSource, DateTime> ForDateTime<TSource>(string name, Func<TSource, DateTime> accessor)
-	{
-		var column = new GQIDateTimeColumn(name);
-		return new PropertyDefinition<TSource, DateTime>(column, accessor);
-	}
-
-	private RecordDefinition<TSource> ForProperties<TSource>(IReadOnlyList<IPropertyDefinition<TSource>> properties)
-	{
-		return new RecordDefinition<TSource>(properties);
-	}
-
-	private interface IPropertyDefinition<TSource>
-	{
-		GQIColumn Column { get; }
-		GQICell CreateCell(TSource source);
-	}
-
-	private class PropertyDefinition<TSource, TColumn> : IPropertyDefinition<TSource>
-	{
-		public GQIColumn Column => _column;
-		private readonly GQIColumn<TColumn> _column;
-		private readonly Func<TSource, TColumn> _accessor;
-
-		public PropertyDefinition(GQIColumn<TColumn> column, Func<TSource, TColumn> accessor)
-		{
-			_column = column;
-			_accessor = accessor;
-		}
-
-		public GQICell CreateCell(TSource source)
-		{
-			var value = _accessor(source);
-			return new GQICell { Value = value };
-		}
-	}
-
-	private class RecordDefinition<TSource>
-	{
-		private readonly IReadOnlyList<IPropertyDefinition<TSource>> _properties;
-
-		public RecordDefinition(IReadOnlyList<IPropertyDefinition<TSource>> properties)
-		{
-			_properties = properties;
-		}
-
-		public GQIColumn[] GetColumns()
-		{
-			var columns = _properties.Select(property => property.Column);
-			return columns.ToArray();
-		}
-
-		public GQIRow CreateRow(TSource source)
-		{
-			var cells = _properties.Select(property => property.CreateCell(source));
-			return new GQIRow(cells.ToArray());
-		}
+		var request = new DiagnoseMessage(DiagnoseMessageType.OpenConnections, Convert.ToString(connectionID));
+		var response = (TextMessage)_dms.SendMessage(request);
+		return response.Text.Split(new string[] { "Subscription Set:" }, StringSplitOptions.RemoveEmptyEntries).Length - 1;
 	}
 }
